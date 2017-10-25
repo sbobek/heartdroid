@@ -1,0 +1,4 @@
+include "cli"
+
+include ':heartdroid'
+project(':heartdroid').projectDir = new File(settingsDir, '../heartdroid')

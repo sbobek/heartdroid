@@ -1,0 +1,439 @@
+//-----------------------------------------------------------------------------
+// HMR file grammar
+//-----------------------------------------------------------------------------
+Start = Skip* HMRelement*+EOF {throwSyntaxError}; 
+HMRelement = 
+  (HMRtype / HMRattr / 
+  HMRschm / HMRrule) 
+  / DEPelement ~{badElement}
+  / BADelement ~{spottedEOF};
+
+BADelement = (String/Number/^["."])* (Dot);
+
+DEPelement = ("xtraj"/"xtpgr"/"xatgr"/"xstat"/"xcall"/"xactn"/"xhalv") (
+              String/Number/^["."])* (Dot) {deprecatedElement};
+
+//-----------------------------------------------------------------------------
+// HMR type definition 
+//-----------------------------------------------------------------------------
+HMRtype = 
+  HMRtypeAnnotations?
+  "xtype" LSbracket
+    HMRtypeElement
+    (Comma HMRtypeElement)*     
+    RSbracket Dot {addType} <xtype definition>;
+
+HMRtypeElement = 
+  HMRtypeName / 
+  HMRtypeBase / 
+  HMRtypeDomain / 
+  HMRtypeLength /
+  HMRtypeOrdered / 
+  HMRtypeDesc /
+  HMRtypeScale <type definition attribute>;
+
+HMRtypeName = 
+  "name" Colon String {buildTypeName} <type name>;
+
+HMRtypeBase = 
+  "base" Colon ("numeric" / "symbolic") {buildTypeBase} <type base>;
+
+HMRtypeDomain = 
+  "domain" Colon (NumericValuesList / DomainSymbolsList) {buildTypeDomain} <type domain>;
+
+DomainSymbolsList = 
+  LSbracket
+    DomainSymbol
+    (Comma DomainSymbol)*
+  RSbracket {buildValuesList} <symbols list>;
+
+DomainSymbol =
+  (OrderedStringValue / StringValue) {buildPassValue} <symbol>;
+
+HMRtypeLength = 
+  "length" Colon UInteger {buildTypeLength} <type length>;
+
+HMRtypeOrdered = 
+  "ordered" Colon ("yes" / "no") {buildTypeOrdered} <type order>;
+
+HMRtypeDesc = 
+  "desc" Colon String {buildTypeDescription} <type description>;
+
+// Deprecated
+HMRtypeScale = 
+  "scale" Colon UInteger <type scale (deprecated)>;
+
+//-----------------------------------------------------------------------------
+// HMR attribute definition
+//-----------------------------------------------------------------------------
+HMRattr = 
+  HMRattrAnnotations?
+  "xattr" LSbracket
+    HMRattrElement
+    (Comma HMRattrElement)*     
+  RSbracket Dot {addAttribute} <xattr definition>;
+
+HMRattrElement = 
+  HMRattrName / 
+  HMRattrClass / 
+  HMRattrType /
+  HMRattrComm / 
+  HMRattrCallback / 
+  HMRattrAbbrev / 
+  HMRattrDesc <attribute element definition>;
+
+HMRattrName = 
+  "name" Colon String {buildAttrName} <attribute name>;
+
+HMRattrClass =
+  "class" Colon ("simple"/"general") {buildAttrClass} <attribute class>;
+
+HMRattrType = 
+  "type" Colon String {buildAttrType} <attribute type>;
+
+HMRattrComm =
+  "comm" Colon ("out"/"inter"/"comm"/"in") {buildAttrComm} <attribute communication mode>;
+
+HMRattrCallback = 
+  "callback" Colon 
+    Identifier {buildAttrCallback} <attribute callback name>;
+
+HMRattrAbbrev = 
+  "abbrev" Colon String {buildAttrAbbreviation} <attribute abbreviation>;
+
+HMRattrDesc = 
+  "desc" Colon String {buildAttrDescription} <attribute description>;
+
+//-----------------------------------------------------------------------------
+// HMR scheme definition
+//-----------------------------------------------------------------------------
+HMRschm = 
+  HMRschmAnnotations?
+  "xschm" Skip*
+  HMRschmName
+  (Slash HMRschmDesc)?
+  Colon
+  HMRschmConditions
+  EQarrow
+  HMRschmDecisions
+  Skip* Dot {addTable} <xschm definition>;
+
+HMRschmName =
+  String {buildSchmName} <scheme name>;
+
+HMRschmDesc =
+  String {buildSchmDescription} <scheme description>;
+
+HMRschmConditions =
+  StringsList {buildSchmConditions} <scheme conditional attributes>;
+
+HMRschmDecisions = 
+  StringsList {buildSchmDecisions} <scheme decisional attributes>;
+
+//-----------------------------------------------------------------------------
+// HMR rule definiton
+//-----------------------------------------------------------------------------
+HMRrule =
+  HMRruleAnnotations?
+  "xrule" Skip*
+  HMRruleName Colon
+  HMRruleConditionsList EQarrow HMRruleDecisionsList
+  (STarrow HMRruleAction)?
+  (Colon (HMRruleToken / HMRruleTokensList))? Dot 
+  (HMRruleCertaintyFactor? Skip*)
+  {addRule} <xrule definition>;
+
+HMRruleName = 
+  HMRruleId {buildRuleName} <rule name>;
+
+HMRruleCertaintyFactor =
+  Skip* "#" Skip*
+  Number {addRuleCertaintyFactor} <xrule certainty factor>; 
+
+HMRruleConditionsList = 
+  LSbracket 
+    HMRruleCondition 
+    (Comma HMRruleCondition)*
+  RSbracket <rule conditions>;
+
+HMRruleCondition =
+  HMRruleAttributeExpression HRCop HMRCopParameters? HRDexpression {buildRuleCondition} <condition>;
+
+HRCop =
+  Skip* ("eq" / "noteq" / "lte" / "lt" / "gte" / "gt" / "subset"/ "supset"/ "sim"/ "notsim" / "in" / "notin") Skip*  {buildRuleConditionalOperator} <conditional operator>;
+
+HMRCopParameters = LCbracket 
+  ("min"/"exact"/"max") 
+  Skip+ 
+  Percent
+  Skip+
+  "in" 
+  Skip+ 
+  TimePeriod
+  RCbracket {buildConditionalOperatorParameters} <conditional operation parameters>;
+
+HMRruleDecisionsList = 
+  LSbracket 
+    HMRruleDecision
+    (Comma HMRruleDecision)*
+  RSbracket <rule decisions>;
+
+HMRruleDecision =
+  String Skip+
+  "set" Skip+
+  HRDexpression {buildRuleDecision} <decision>;
+
+HMRruleAttributeExpression = 
+  (HMRruleAttributePeriodExpression /
+  HMRruleAttributeTimeExpression /
+  HMRruleAttributeNameExpression) {buildPassValue};
+
+HMRruleAttributeNameExpression = 
+  String {buildAttributeNameExpression};
+
+HMRruleAttributePeriodExpression = 
+  ("max"/"mean"/"min"/"med"/"stddev"/"trend"/"var"/"mode") Lbracket String Comma TimePeriod Rbracket
+  {buildAttributePeriodExpression};
+
+HMRruleAttributeTimeExpression = 
+  "valat" Lbracket String Comma Time Rbracket {buildAttributeTimeExpression};
+
+HRDexpression = 
+ HRDexpPrec3 {buildPassValue} <decisional expression>;
+
+HMRruleStaticExpression = 
+  "dom" Lbracket String Rbracket {buildDomainOperator};
+
+HRDexpPrec0 = 
+  ValuesList {buildValueExpression} /
+  NumberValue {buildValueExpression} /
+  HRDopPrec0 {buildPassValue}/
+  HMRruleAttributeTimeExpression {buildPassValue} /
+  HMRruleAttributePeriodExpression {buildPassValue} /
+  HMRruleStaticExpression {buildPassValue} /
+  Lbracket HRDexpression Rbracket {buildBrackettedExpression} /
+  String {buildStringExpression};
+
+HRDexpPrec1 =
+  HRDexpPrec0 
+  (HRDopPrec1 HRDexpPrec0)* {buildAssociativeExpression}; 
+
+HRDexpPrec2 =
+  HRDexpPrec1 
+  (HRDopPrec2 HRDexpPrec1)* {buildAssociativeExpression}; 
+
+HRDexpPrec3 =
+  HRDexpPrec2 
+  (HRDopPrec3 HRDexpPrec2)* {buildAssociativeExpression};
+
+HRDopPrec0 = 
+  (HRDopPrec0arg1 
+  / 
+  HRDopPrec0arg2) {buildPassValue};
+
+HRDopPrec0arg1 = 
+  ("abs"/"cos"/"sin"/"tan"/"fac"/"log"/"setpower") Lbracket HRDexpression Rbracket {buildUnaryExpression};
+
+HRDopPrec0arg2 = 
+  ("complement"/"except"/"intersec"/"union")
+  Lbracket (ValuesList/HRDexpression) Comma 
+           (ValuesList/HRDexpression) Rbracket {buildBinaryExpression};
+
+HRDopPrec1 = 
+  Skip* "**" Skip* {buildOperator} <"**">;
+HRDopPrec2 = 
+  (Skip* "*" Skip* /
+  Skip* "/" Skip* /
+  Skip* "mod" Skip*) {buildOperator} <"*" or "/" or "mod">; 
+HRDopPrec3 = 
+  (Skip* "+" Skip*  /
+  Skip* "-" Skip*) {buildOperator} <"+" or "-">;
+
+HMRruleAction =
+  IdentifiersList {buildRuleActions} <rule action>;
+
+HMRruleTokensList = 
+  LSbracket 
+    HMRruleToken
+    (Comma HMRruleToken)* 
+  RSbracket <list of rule links>;
+
+HMRruleToken =
+  (HMRruleId / HMRRuleSchemeId) {buildRuleLink} <rule link>;
+
+HMRruleId = 
+  String "/" HMRruleIndex {buildRuleId} <rule id>;
+
+HMRruleIndex = 
+  Integer {buildRuleIndex} <rule index>;
+
+HMRRuleSchemeId =
+  String {buildRuleSchemeId} <scheme id>; 
+
+//-----------------------------------------------------------------------------
+// HMR Annotations
+//-----------------------------------------------------------------------------
+
+HMRattrAnnotations = AnnotationsList { buildAttrAnnotations };
+HMRruleAnnotations = AnnotationsList { buildRuleAnnotations };
+HMRtypeAnnotations = AnnotationsList { buildTypeAnnotations };
+HMRschmAnnotations = AnnotationsList { buildSchmAnnotations };
+AnnotationsList = (Annotation AnnotationsSeparator)+ !(Skip / "@") {buildAnnotationsList};
+Annotation = "@" AnnotationString (AnnotationLBracket AnnotationValues AnnotationRBracket)? {buildAnnotation};
+AnnotationsSeparator = Skip*;
+AnnotationValues = 
+  AnnotationEquation (Comma AnnotationEquation)* {addKeyValueAnnotation} / 
+  AnnotationString {addValueAnnotation};
+
+AnnotationEquation = AnnotationString AnnotationEqSign AnnotationString {buildKeyValueEquation} <key-value assignment>;
+AnnotationString = ([a-z]/[A-Z]/"-"/"_"/"."/":"/";"/"["/"]"/[0-9])+ {buildNormalString} /
+                  "'" ^["'"]* "'" {buildQuotedString};
+AnnotationLBracket = Skip* "(" Skip* <"(">;
+AnnotationRBracket = Skip* ")" Skip* <")">;
+AnnotationEqSign = Skip* "=" Skip* <"=">;
+
+//-----------------------------------------------------------------------------
+// HMR primitives
+//-----------------------------------------------------------------------------
+Colon = 
+  Skip* ":" Skip* <":">;
+Dot = 
+  Skip* "." Skip* <".">;
+Comma = 
+  Skip* "," Skip* <",">;
+LSbracket = 
+  Skip* "[" Skip* <"[">;
+RSbracket = 
+  Skip* "]" Skip* <"]">;
+RangeOp =
+  Skip* "to" Skip* <"to">;
+EQarrow =
+  Skip* "==>" Skip* <"==\>">;
+STarrow =
+  Skip* "**>" Skip* <"**\>">;
+Slash =
+  Skip* "/" Skip* <"/"">;
+Lbracket =
+  Skip* "(" Skip* <"(">;
+Rbracket = 
+  Skip* ")" Skip* <")">;
+LCbracket = 
+  Skip* "{" Skip* <"{">;
+RCbracket = 
+  Skip* "}" Skip* <"}">;
+
+TimePeriod = (TimeIndexPeriod / TimeMomentPeriod) {buildPassValue};
+TimeIndexPeriod = 
+  TimeIndex (RangeOp/Colon) TimeIndex {buildTimeIndexRange} /
+  TimeIndex Colon TimeIndexStep Colon TimeIndex {buildTimeIndexRangeWithStep};
+TimeMomentPeriod = 
+  TimeMoment (RangeOp/Colon) TimeMoment {buildTimeMomentRange} /
+  TimeMoment Colon TimeMomentStep Colon TimeMoment {buildTimeMomentRangeWithStep};
+
+Time = (TimeIndex / TimeMoment) {buildPassValue};
+TimeIndex = ("0" / "-" White* UInteger) {buildTimeIndex};  
+TimeIndexStep = UInteger {buildPassValue};
+TimeMoment = ("0" TimeUnit?  / "-" White* UInteger TimeUnit) {buildTimeMoment};
+TimeMomentStep = UInteger TimeUnit {buildTimeMomentStep};
+TimeUnit = White* ("ms" / "s" / "min" / "h") {buildTimeUnit};
+
+ValuesList = 
+  (NumericValuesList / SymbolicValuesList) {buildPassValue} <list of values>;
+
+NumericValuesList =
+  LSbracket 
+    NumericValue 
+    (Comma NumericValue)*
+  RSbracket {buildValuesList} <list of numeric values>;
+
+NumericValue =
+  (NumberValuesRange / NumberValue) {buildPassValue} <numeric value>;
+ 
+NumberValuesRange = 
+  NumberValue 
+  RangeOp
+  NumberValue {buildValuesRange} <range of numbers>;
+
+SymbolicValuesList = 
+  LSbracket 
+    SymbolicValue 
+    (Comma SymbolicValue)*
+  RSbracket {buildValuesList} <list of symbolic values>;
+
+SymbolicValue =
+  (StringValuesRange / StringValue) {buildPassValue} <symbolic value>;
+
+StringValuesRange = 
+  StringValue 
+  RangeOp
+  StringValue {buildValuesRange} <range of strings>;
+
+StringsList = 
+  LSbracket
+    String
+    (Comma String)*
+  RSbracket {buildList} <list of string>;
+
+IdentifiersList = 
+  LSbracket
+    Identifier
+    (Comma Identifier)*
+  RSbracket {buildList} <list of foreign identifiers>;
+
+OrderedStringValue = String Slash UInteger {buildOrderedStringValue} <ordered string>;
+
+StringValue = 
+  String {buildStringValue} <string>;
+String = 
+  (QuotedString / NormalString) {buildPassValue} <string>;
+
+QuotedString = 
+  "'" ^["'"]* "'" {buildQuotedString} <quoted string>;
+NormalString = 
+  [a-z] ([a-z]/[A-Z]/[0-9]/"_")* {buildNormalString} <unquoted string>; 
+Identifier =
+  NormalString {buildPassValue}
+  /
+  "'" ([a-z]/[A-Z]/"_") ([a-z]/[A-Z]/"_"/[0-9]/".")* "'" {buildQuotedString} <foreign identifier>;
+
+NumberValue =
+  (FloatValue / IntegerValue) {buildPassValue} <number>;
+Number = 
+  (Float / Integer) {buildPassValue} <number>;
+
+Percent = (UFloat/UInteger) ("%")? {buildPercent} <percent>;
+
+FloatValue =
+  Float {buildNumberFloatValue} <float>;
+Float = 
+  ("-" White*)? UFloat {buildSignedFloat} <float>;
+UFloat = 
+  [0-9]+ "." [0-9]+ {buildUnsignedFloat} <unsigned float>;
+IntegerValue =
+  Integer {buildNumberIntValue} <integer>;
+Integer = 
+  ("-" White*)? UInteger {buildSignedInteger} <integer>; 
+UInteger = 
+  [0-9]+ {buildUnsignedInteger} <unsigned integer>; 
+
+//-----------------------------------------------------------------------------
+// HMR skippable elements
+//-----------------------------------------------------------------------------
+Skip =
+  (Comment/
+  Clause/
+  White) {passSkip} <skippable element>;
+
+Comment = 
+  "%" _*+EOL /
+  CommentStart _*+CommentEnd <comment>;
+CommentStart = "/*";
+CommentEnd = "*/";
+
+Clause =
+  ":-" (String/^["."])* "." <prolog clause>;
+
+White = [ \t\r\n] <whitespace character>;
+
+EOL     = [\n\r]+ / EOF <end of line>;
+EOF     = !_ <end of file>;

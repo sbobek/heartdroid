@@ -1,0 +1,28 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'haquna.HaqunaMain'
+
+sourceCompatibility = 1.7
+
+jar{
+	manifest {
+        attributes 'Main-Class': 'haquna.HaqunaMain'
+    }
+    
+    from {
+    	configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  	}
+  
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	compile group: 'jline', name: 'jline', version: '2.14.+'
+	compile group: 'com.beust', name: 'jcommander', version: '1.35'
+	compile project(':heartdroid')
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+}
