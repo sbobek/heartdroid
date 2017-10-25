@@ -1,8 +1,10 @@
 # HeaRTDroid
 HeaRTDroid is a rule-based inference engine both for **Android mobile devices, and desktop solutions** that is based on [HeaRT](http://ai.ia.agh.edu.pl/wiki/hekate:heart) inference engine. It is distributed under the GNU General Public License.
-It can be downloaded from [Bitbucket](https://bitbucket.org/sbobek/heartdroid/downloads/).
+It can be downloaded from [Bitbucket](https://bitbucket.org/sbobek/heartdroid/downloads/) and [Github](https://github.com/sbobek/heartdroid), although the complete project history and issue tracker is available only on [Bitbucket](https://bitbucket.org/sbobek/heartdroid/issues?status=new&status=open).
 It was crafted for the purpose of mobile context-aware systems which have to operate in highly dynamic environments and handle uncertain or incomplete knowledge,
 being at the same time efficient and understandable for the user.
+
+## 
 
 ## Key features are:
   * Inference support for **XTT2 rule representation** that is based on the **Attributive Logic with Set Values** and its textual representation called **[HMR+](https://glados.kis.agh.edu.pl/doku.php?id=pub:software:heartdroid:tutorials:hmr_quickstart)**
