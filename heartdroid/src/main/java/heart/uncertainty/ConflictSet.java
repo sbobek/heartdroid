@@ -57,7 +57,15 @@ public class ConflictSet implements Iterable<SimpleEntry<Rule,UncertainTrue>>{
 	public Iterator<SimpleEntry<Rule,UncertainTrue>> iterator() {
 		return orderedSet.iterator();
 	}
-	
+
+	public ConflictSet copy() {
+		ConflictSet cs = new ConflictSet();
+		for(SimpleEntry<Rule,UncertainTrue> c: this){
+			cs.add(c.getKey(),c.getValue());
+		}
+		return cs;
+	}
+
 	public boolean isEmpty(){
 		return orderedSet.isEmpty();
 	}

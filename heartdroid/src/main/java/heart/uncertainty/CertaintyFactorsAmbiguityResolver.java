@@ -101,10 +101,11 @@ public class CertaintyFactorsAmbiguityResolver implements AmbiguityResolver{
                 decisionsEvals.appendValue(d.getDecision().evaluate(wm));
             }
 
-            ConflictSet existingCS = result.get(decisionsEvals);
-            if(existingCS != null){
+
+            if(result.get(decisionsEvals) != null){
                 //comapre certainty factors
-                for(AbstractMap.SimpleEntry<Rule,UncertainTrue> existingRule : existingCS){
+                ConflictSet existingCS = result.get(decisionsEvals).copy();
+                for(AbstractMap.SimpleEntry<Rule,UncertainTrue> existingRule : result.get(decisionsEvals)){
                     if(existingRule.getValue().getCertinatyFactor() < r.getValue().getCertinatyFactor()){
                         //clear and replace
                         existingCS.clear();
@@ -113,6 +114,7 @@ public class CertaintyFactorsAmbiguityResolver implements AmbiguityResolver{
                         existingCS.add(r.getKey(),r.getValue());
                     }
                 }
+                result.put(decisionsEvals,existingCS);
             }else{
                 ConflictSet initialCS = new ConflictSet();
                 initialCS.add(r.getKey(),r.getValue());

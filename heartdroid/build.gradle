@@ -1,16 +1,18 @@
-apply plugin: 'java'
-
+//apply plugin: 'java'
+plugins {
+    id 'java'
+}
 sourceCompatibility = 1.7
 version = '1.3.0_'
 
 jar {
    	def hgrev = new ByteArrayOutputStream()
     project.exec {
-        commandLine 'hg', 'id', '-n'
+        commandLine 'git', 'rev-parse', 'HEAD'
         standardOutput = hgrev
     }
     manifest {
-    	version = version + hgrev.toString().replaceAll('[^0-9]','')
+    	version = version + hgrev.toString().replaceAll('[^a-z0-9]','')
     	print(version)
         attributes "Implementation-Title": 'HeaRTDroid inference engine',
         		   "Implementation-Version": version,
