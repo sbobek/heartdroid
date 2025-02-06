@@ -38,6 +38,7 @@ import heart.alsvfd.SimpleSymbolic;
 import heart.exceptions.*;
 import heart.parser.hmr.HMRParser;
 import heart.parser.hmr.runtime.SourceFile;
+import heart.uncertainty.CertaintyFactorsEvaluator;
 import heart.uncertainty.ConflictSetFireAll;
 import heart.xtt.Attribute;
 import heart.xtt.Table;
@@ -118,6 +119,7 @@ public class HMRCommandLine {
             HeaRT.fixedOrderInference(model, tabs,
                     new Configuration.Builder()
                             .setInitialState(initial)
+                            .setUte(new CertaintyFactorsEvaluator())
                             .setCsr(new ConflictSetFireAll()) //fires all rules from cs
                             .build());
 

@@ -1,2 +1,2 @@
-include "heartdroid", "haquna"
+include "heartdroid", "haquna", "cli"
 rootProject.name = 'HeartToolkit'

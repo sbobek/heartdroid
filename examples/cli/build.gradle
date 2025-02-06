@@ -1,7 +1,0 @@
-mainClassName = "HMRCommandLine"
-
-version = '0.9'
-
-dependencies {
-    compile group: 'com.beust', name: 'jcommander', version: '1.35'
-}
